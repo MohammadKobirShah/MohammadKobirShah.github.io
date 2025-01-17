@@ -1,88 +1,86 @@
-document.addEventListener("DOMContentLoaded", function() {
-  // Sample M3U data URL (replace with your actual M3U URL or path)
-  const m3uUrl = "path_to_your_m3u_file.m3u";
+document.addEventListener("DOMContentLoaded", function () {
+  const player = new Plyr('#player'); // Initialize Plyr.js
+  const video = document.getElementById('player');
+  const channelContainer = document.getElementById('channel-container');
 
-  // Function to fetch and parse M3U data
-  async function fetchM3UData() {
+  const m3uUrl = "https://raw.githubusercontent.com/mhfzkobir/allinone-special-playlist.m3u/refs/heads/main/TataTv.m3u";
+
+  // Function to fetch and parse M3U playlist
+  async function fetchAndParseM3U(url) {
     try {
-      const response = await fetch(m3uUrl);
+      const response = await fetch(url);
       const m3uData = await response.text();
-      const categories = parseM3UData(m3uData);
-      displayCategories(categories);
+      const channels = parseM3UData(m3uData);
+      displayChannels(channels);
     } catch (error) {
-      console.error("Error fetching M3U data:", error);
+      console.error("Failed to fetch M3U file:", error);
     }
   }
 
-  // Function to parse M3U data and extract categories
-  function parseM3UData(m3uData) {
-    const categories = [];
-    const lines = m3uData.split("\n");
+  // Function to parse M3U data into channel objects
+  function parseM3UData(data) {
+    const lines = data.split("\n");
+    const channels = [];
 
-    let currentCategory = null;
-    
-    // Loop through M3U lines
-    lines.forEach(line => {
-      // Check if line contains a category
-      if (line.startsWith("#EXTINF:")) {
-        const categoryName = line.split(",")[1].trim();
-        const groupLogo = line.match(/group-logo="([^"]+)"/);
-        
-        if (categoryName) {
-          // Add category details to the list
-          categories.push({
-            name: categoryName,
-            logo: groupLogo ? groupLogo[1] : null
-          });
+    let currentChannel = {};
+    lines.forEach((line) => {
+      if (line.startsWith("#EXTINF")) {
+        const info = line.split(",")[1];
+        currentChannel.name = info ? info.trim() : "Unknown Channel";
+      } else if (line.startsWith("http")) {
+        currentChannel.url = line.trim();
+        if (currentChannel.name && currentChannel.url) {
+          channels.push(currentChannel);
+          currentChannel = {}; // Reset for the next channel
         }
       }
     });
 
-    return categories;
+    return channels;
   }
 
-  // Function to display categories in the category container
-  function displayCategories(categories) {
-    const categoryContainer = document.getElementById("category-container");
+  // Function to display channels on the UI
+  function displayChannels(channels) {
+    channelContainer.innerHTML = ""; // Clear previous content
+    channels.forEach((channel) => {
+      const channelCard = document.createElement("div");
+      channelCard.classList.add("channel-card");
 
-    // Clear any existing categories
-    categoryContainer.innerHTML = "";
+      // Optional: Placeholder image or fetch from external source
+      const channelLogo = `https://via.placeholder.com/200x100?text=${encodeURIComponent(channel.name)}`;
 
-    categories.forEach(category => {
-      const categoryCard = document.createElement("div");
-      categoryCard.classList.add("category-card");
+      channelCard.innerHTML = `
+        <img src="${channelLogo}" alt="${channel.name}" />
+        <div class="channel-name">${channel.name}</div>
+      `;
 
-      // Add category logo
-      if (category.logo) {
-        const img = document.createElement("img");
-        img.src = category.logo; // Assuming group-logo is a valid URL
-        img.alt = `${category.name} logo`;
-        categoryCard.appendChild(img);
-      }
-
-      // Add category name
-      const categoryName = document.createElement("span");
-      categoryName.classList.add("category-name");
-      categoryName.textContent = category.name;
-      categoryCard.appendChild(categoryName);
-
-      // Add event listener for category selection (optional)
-      categoryCard.addEventListener("click", function() {
-        filterChannelsByCategory(category.name);
-      });
-
-      categoryContainer.appendChild(categoryCard);
+      channelCard.addEventListener("click", () => playChannel(channel.url));
+      channelContainer.appendChild(channelCard);
     });
   }
 
-  // Function to filter channels by category (based on selected category)
-  function filterChannelsByCategory(categoryName) {
-    const channelContainer = document.getElementById("channel-container");
-    // This function can filter and display channels based on the selected category
-    // You will need to implement channel filtering logic based on your M3U data
-    console.log(`Filtering channels for category: ${categoryName}`);
+  // Function to play the selected channel
+  function playChannel(url) {
+    if (url.endsWith('.m3u') || url.endsWith('.m3u8')) {
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          video.play();
+        });
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = url;
+        video.play();
+      } else {
+        console.error("HLS not supported in this browser.");
+      }
+    } else {
+      video.src = url;
+      video.play();
+    }
   }
 
-  // Fetch and display categories when page is loaded
-  fetchM3UData();
+  // Fetch and display channels
+  fetchAndParseM3U(m3uUrl);
 });
