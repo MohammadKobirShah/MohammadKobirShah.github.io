@@ -3,6 +3,7 @@ let channels = [];
 const channelContainer = document.getElementById('channel-container');
 const searchInput = document.getElementById('search');
 const categorySelect = document.getElementById('category');
+const playbackStats = {};
 
 // Fetch and parse M3U
 async function fetchChannels() {
@@ -35,7 +36,7 @@ function parseM3U(m3uContent) {
       };
     } else if (line.trim() && !line.startsWith('#')) {
       const url = line.trim();
-      if (isPlayableUrl(url)) {
+      if (url.endsWith('.m3u8')) {
         currentChannel.url = url;
         channels.push(currentChannel);
       }
@@ -44,11 +45,6 @@ function parseM3U(m3uContent) {
 
   displayChannels(channels);
   populateCategories();
-}
-
-// Helper: Valid URL
-function isPlayableUrl(url) {
-  return /(mpd|m3u|m3u8|php\?id=)/i.test(url);
 }
 
 // Display Channels
@@ -61,9 +57,37 @@ function displayChannels(channelList) {
       ${channel.logo ? `<img src="${channel.logo}" alt="${channel.name} Logo">` : ''}
       <h3>${channel.name}</h3>
     `;
-    card.addEventListener('click', () => openPlayerPopup(channel.url));
+    card.addEventListener('click', () => openPlayerPopup(channel.url, channel.name));
     channelContainer.appendChild(card);
   });
+}
+
+// Open Player Popup
+function openPlayerPopup(url, channelName) {
+  trackPlayback(channelName);
+  const popup = window.open('', '_blank', 'width=1920,height=1080,resizable=yes');
+  popup.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Player</title>
+      <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    </head>
+    <body>
+      <video id="video" controls autoplay></video>
+      <script>
+        const video = document.getElementById('video');
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource('${url}');
+          hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = '${url}';
+        }
+      </script>
+    </body>
+    </html>
+  `);
 }
 
 // Categories Dropdown
@@ -76,42 +100,40 @@ function populateCategories() {
     option.textContent = category;
     categorySelect.appendChild(option);
   });
+
+  categorySelect.addEventListener('change', () => {
+    const selectedCategory = categorySelect.value;
+    const filteredChannels = selectedCategory === 'all'
+      ? channels
+      : channels.filter((channel) => channel.category === selectedCategory);
+    displayChannels(filteredChannels);
+  });
 }
 
-// Error Message
-function displayErrorMessage(message) {
-  channelContainer.innerHTML = `<div class="error-message">${message}</div>`;
+// Advanced Search
+function advancedSearch() {
+  const searchTerm = searchInput.value.toLowerCase();
+  const countryTerm = document.getElementById('country').value.toLowerCase();
+  const qualityTerm = document.getElementById('quality').value.toLowerCase();
+
+  const filteredChannels = channels.filter((channel) => {
+    const matchesSearch = channel.name.toLowerCase().includes(searchTerm);
+    const matchesCountry = channel.category.toLowerCase().includes(countryTerm);
+    const matchesQuality = channel.name.toLowerCase().includes(qualityTerm);
+    return matchesSearch && matchesCountry && matchesQuality;
+  });
+
+  displayChannels(filteredChannels);
 }
 
-// Player Popup
-function openPlayerPopup(url) {
-  const popup = window.open('', '_blank', 'width=1920,height=1080,resizable=yes');
-  popup.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Player</title>
-      <link rel="stylesheet" href="https://orcl.drmlive.au/jiocinema/player.css">
-      <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-      <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
-    </head>
-    <body>
-      <video id="video" controls></video>
-      <script>
-        const video = document.getElementById('video');
-        if (url.endsWith('.m3u8')) {
-          const hls = new Hls();
-          hls.loadSource('${url}');
-          hls.attachMedia(video);
-        } else if (url.endsWith('.mpd')) {
-          const player = dashjs.MediaPlayer().create();
-          player.initialize(video, '${url}', true);
-        }
-      </script>
-    </body>
-    </html>
-  `);
+searchInput.addEventListener('input', advancedSearch);
+document.getElementById('country').addEventListener('input', advancedSearch);
+document.getElementById('quality').addEventListener('input', advancedSearch);
+
+// Playback Analytics
+function trackPlayback(channelName) {
+  playbackStats[channelName] = (playbackStats[channelName] || 0) + 1;
+  console.log(`${channelName} played ${playbackStats[channelName]} times.`);
 }
 
-// Initialize
 fetchChannels();
