@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diamond Live TV</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="logo">💎 Diamond Live TV</div>
+    <div class="search-container">
+      <input type="text" id="search" placeholder="Search channels..." />
+      <select id="category">
+        <option value="all">All Categories</option>
+      </select>
+      <button id="theme-toggle" class="theme-btn">Light Mode</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="category-container" class="category-grid">
+      <!-- Categories will load here dynamically -->
+    </div>
+
+    <div id="channel-container" class="grid-view">
+      <!-- Channels will load here dynamically -->
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 Diamond Live TV | Built with ❤️</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
