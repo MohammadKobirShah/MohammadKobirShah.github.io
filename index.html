@@ -4,27 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Diamond Live TV</title>
-  
-  <!-- Plyr.js Stylesheet -->
-  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-
-  <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
     <div class="logo">💎 Diamond Live TV</div>
+    <div class="search-container">
+      <input type="text" id="search" placeholder="Search channels...">
+      <select id="category">
+        <option value="all">All Categories</option>
+      </select>
+      <button id="theme-toggle" class="theme-btn">Light Mode</button>
+    </div>
   </header>
 
   <main>
-    <!-- Video Player Container -->
-    <div class="plyr-container">
-      <video id="player" controls></video>
-    </div>
-
-    <!-- Channels List -->
-    <div id="channel-container" class="channel-grid">
-      <!-- Channels will load here dynamically -->
+    <div id="channel-container" class="grid-view">
+      <!-- Channels load dynamically -->
     </div>
   </main>
 
@@ -32,11 +28,6 @@
     <p>© 2025 Diamond Live TV | Built with ❤️</p>
   </footer>
 
-  <!-- Required Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
-
-  <!-- Custom Script -->
   <script src="app.js"></script>
 </body>
 </html>
